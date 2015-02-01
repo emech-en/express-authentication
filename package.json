@@ -1,11 +1,11 @@
 {
-  "name": "express-authentication",
+  "name": "express-api-authentication",
   "version": "0.0.0",
   "description": "This is a express middleware that manage authentication and authorization",
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "git@github.com:emech-en/express-authentication.git"
+    "url": "git@github.com:emech-en/express-api-authentication.git"
   },
   "dependencies": {
     "debug": "~2.0.0",
@@ -32,9 +32,9 @@
   "author": "Emech En <mh.niroomand91@gmail.com> (http://www.emech.ir/)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/emech-en/express-authentication/issues"
+    "url": "https://github.com/emech-en/express-api-authentication/issues"
   },
-  "homepage": "https://github.com/emech-en/express-authentication",
+  "homepage": "https://github.com/emech-en/express-api-authentication",
   "files": [
     "LICENSE",
     "index.js"
