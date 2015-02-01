@@ -1,0 +1,48 @@
+{
+  "name": "express-authentication",
+  "version": "0.0.0",
+  "description": "This is a express middleware that manage authentication and authorization",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:emech-en/express-authentication.git"
+  },
+  "dependencies": {
+    "debug": "~2.0.0",
+    "mongoose": "3.8.19",
+    "async": "0.9.0",
+    "mongoose-createdmodified": "0.0.2",
+    "jsonwebtoken": "3.2.2"
+  },
+  "devDependencies": {
+    "muffin": ">= 0.6.2",
+    "glob": ">= 3.0.1",
+    "mocha": ">= 1.4.2",
+    "chai": ">= 1.2.0"
+  },
+  "keywords": [
+    "mongo",
+    "mongodb",
+    "authentication",
+    "express",
+    "authorization",
+    "rest", 
+    "api"
+  ],
+  "author": "Emech En <mh.niroomand91@gmail.com> (http://www.emech.ir/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/emech-en/express-authentication/issues"
+  },
+  "homepage": "https://github.com/emech-en/express-authentication",
+  "files": [
+    "LICENSE",
+    "index.js"
+  ],
+  "engines": {
+    "node": ">= 0.8.0"
+  },
+  "scripts": {
+    "test": "NODE_ENV=test node_modules/.bin/mocha --timeout 10000 -R spec test/*"
+  }
+}
