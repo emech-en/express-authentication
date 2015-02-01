@@ -1,7 +1,12 @@
-var Token = require('./token.js')
-
-var models = {
-  Token: Token
+function loadModels() {
+  return {
+    Token: require('./token').model,
+  }
 }
 
-module.exports = models
+module.exports = {
+  models: models,
+  initConfig: function(configs) {
+    require('./token').init(configs.token || {})
+  }
+}
