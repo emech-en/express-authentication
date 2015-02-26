@@ -21,6 +21,11 @@ var tokenSchema = new Schema({
     default: Date.now
     index: true
   },
+  // shows that token has been revoked or not
+  isRevoked: {
+    type: Boolean,
+    default: false
+  },
   // a key for eachUser
   userKey: {
     type: String,
@@ -38,4 +43,4 @@ var tokenSchema = new Schema({
 })
 
 
-module.exports = tokenSchema
+module.exports = tokenSchema;
