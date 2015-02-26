@@ -2,7 +2,7 @@ var mongoose = require('mongoose')
 var Schema = mongoose.Schema
 var Types = mongoose.Types
 
-var tokenSchema = new Schema({
+var tokenSchema = {
   // generated tokenId string
   token: {
     type: String,
@@ -18,7 +18,7 @@ var tokenSchema = new Schema({
   // expiration date time of the token
   expireAt: {
     type: Date,
-    default: Date.now
+    default: Date.now,
     index: true
   },
   // shows that token has been revoked or not
@@ -40,7 +40,6 @@ var tokenSchema = new Schema({
     type: [String],
     required: true
   }
-})
-
+}
 
 module.exports = tokenSchema;

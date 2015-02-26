@@ -15,22 +15,6 @@ var schemaDef = require('./schema');
 var tokenSchema = new Schema(schemaDef);
 
 /*
-  CONFIGURE SCHEMA
-*/
-// set hooks
-tokenSchema.pre('save', preSave);
-// set methods
-tokenSchema.methods.extendExpirationTime = extendExpirationTime;
-tokenSchema.methods.isExpired = isExpired;
-tokenSchema.methods.revoke = revoke;
-// set static functions
-tokenSchema.statics.findByToken = findByToken;
-tokenSchema.statics.findByUserKey = findByUserKey;
-tokenSchema.statics.revokeByToken = revokeByToken;
-tokenSchema.statics.revokeByUserKey = revokeByUserKey;
-tokenSchema.statics.generateToken = generateToken;
-
-/*
   FUNCTION DEFINITION
 */
 /*
@@ -41,10 +25,11 @@ tokenSchema.statics.generateToken = generateToken;
 */
 var preSave = function(next) {
   if (this.isNew) {
-    var tokenGenerator = new TokenGenerator(configs.secretKey);
+    var tokenGenerator = new TokenGenerator(configs.getSecretKey());
     this.token = tokenGenerator.generateToken();
     this.extendExpirationTime();
   }
+
   return next();
 };
 
@@ -164,7 +149,8 @@ var generateToken = function(userKey, roles, info, revokeOthers, callback) {
   // create and save new token
   var saveNewToken = function(callback) {
     var token = new Token({
-      userKey: userkey,
+      token: 'temp',
+      userKey: userKey,
       roles: roles,
       info: info
     });
@@ -207,7 +193,7 @@ var extendExpirationTime = function(callback) {
               and false if is not expired.
 */
 var isExpired = function() {
-  return Date.now() < this.expireAt;
+  return Date.now() > this.expireAt;
 };
 
 /*
@@ -240,6 +226,22 @@ var revoke = function(callback) {
 var revokeToken = function(token, callback) {
   return token.revoke(callback);
 };
+
+/*
+  CONFIGURE SCHEMA
+*/
+// set hooks
+tokenSchema.pre('save', preSave);
+// set methods
+tokenSchema.methods.extendExpirationTime = extendExpirationTime;
+tokenSchema.methods.isExpired = isExpired;
+tokenSchema.methods.revoke = revoke;
+// set static functions
+tokenSchema.statics.findByToken = findByToken;
+tokenSchema.statics.findByUserKey = findByUserKey;
+tokenSchema.statics.revokeByToken = revokeByToken;
+tokenSchema.statics.revokeByUserKey = revokeByUserKey;
+tokenSchema.statics.generateToken = generateToken;
 
 /*
   Create and return Model
