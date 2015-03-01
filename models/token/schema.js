@@ -1,6 +1,6 @@
-var mongoose = require('mongoose')
-var Schema = mongoose.Schema
-var Types = mongoose.Types
+var mongoose = require('mongoose');
+var Schema = mongoose.Schema;
+var Types = mongoose.Types;
 
 var tokenSchema = {
   // generated tokenId string
@@ -40,6 +40,6 @@ var tokenSchema = {
     type: [String],
     required: true
   }
-}
+};
 
 module.exports = tokenSchema;

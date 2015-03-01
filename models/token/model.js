@@ -1,10 +1,11 @@
 var configs = require('./../../lib/configs');
 var TokenGenerator = require('./../../lib/token-generator');
 var mongoose = require('mongoose');
+var Schema = mongoose.Schema;
 var async = require('async');
 
-var Schema = mongoose.Schema;
-var Types = mongoose.Types;
+// default collection name
+var COLLECTION_NAME = 'tokens';
 
 /*
   CREATE SCHEMA
@@ -24,12 +25,6 @@ var tokenSchema = new Schema(schemaDef);
   according to configs.secretKey and set the expiration time
 */
 var preSave = function(next) {
-  if (this.isNew) {
-    var tokenGenerator = new TokenGenerator(configs.getSecretKey());
-    this.token = tokenGenerator.generateToken();
-    this.extendExpirationTime();
-  }
-
   return next();
 };
 
@@ -136,7 +131,7 @@ var revokeByToken = function(token, callback) {
   returns: 
     [async.waterfall]
  */
-var generateToken = function(userKey, roles, info, revokeOthers, callback) {
+var createToken = function(token, userKey, roles, info, expirationTime, revokeOthers, callback) {
 
   // if revokeOthers revoke all the other tokens
   var revoke = function(callback) {
@@ -148,18 +143,18 @@ var generateToken = function(userKey, roles, info, revokeOthers, callback) {
 
   // create and save new token
   var saveNewToken = function(callback) {
-    var token = new Token({
-      token: 'temp',
+    var newToken = new Token({
+      token: token,
       userKey: userKey,
       roles: roles,
       info: info
     });
 
-    return token.save(function(error, token) {
+    return newToken.extendExpirationTime(expirationTime, function(error, savedToken) {
       if (error)
         return callback(error);
 
-      return callback(null, token.token);
+      return callback(null, savedToken);
     });
   }
 
@@ -173,13 +168,14 @@ var generateToken = function(userKey, roles, info, revokeOthers, callback) {
   if callback is present, save the token and then run the callback.
 
   params:
+    time: times to extend expiration time.
     callback: [function(error, token)]
 
   return:
     [token.save()]
 */
-var extendExpirationTime = function(callback) {
-  this.expireAt = this.expireAt.getTime() + configs.getExpirationTime();
+var extendExpirationTime = function(time, callback) {
+  this.expireAt = this.expireAt.getTime() + time;
   if (callback)
     return this.save(callback);
 };
@@ -241,10 +237,10 @@ tokenSchema.statics.findByToken = findByToken;
 tokenSchema.statics.findByUserKey = findByUserKey;
 tokenSchema.statics.revokeByToken = revokeByToken;
 tokenSchema.statics.revokeByUserKey = revokeByUserKey;
-tokenSchema.statics.generateToken = generateToken;
+tokenSchema.statics.createToken = createToken;
 
 /*
   Create and return Model
 */
-var Token = mongoose.model('token', tokenSchema, configs.getCollectionName());
+var Token = mongoose.model('token', tokenSchema, configs.getCollectionName() || COLLECTION_NAME);
 module.exports = Token;

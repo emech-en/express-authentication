@@ -1,202 +1,295 @@
-var chai = require('chai')
-var assert = chai.assert
-var expect = chai.expect
-var should = chai.should()
-var sinon = require('sinon')
+var chai = require('chai');
+var assert = chai.assert;
+var expect = chai.expect;
+var should = chai.should();
+var sinon = require('sinon');
+var async = require('async');
 
-var configs = require('./../lib/configs')
+var mongoose = require('mongoose');
+mongoose.connect('mongodb://localhost:27000/authentication');
 
-configs.init({
-  secret: 'salamolaghe aziz',
-  mongoose: {
-    uri: 'mongodb://127.0.0.1:27000/authentication'
-  },
-  expirationTime: 10
-})
-
-describe('Testing models module in authentication module', function() {
-  it('Models module should be in "models" folder', function() {
-    assert(require('./../models'))
+describe('Testing models module in authentication module.', function() {
+  var models;
+  it('Models module should be in ./models/ folder.', function() {
+    models = require('./../models/');
+    assert(models, 'Models is not in ./models/ folder.');
   })
 
-  describe('MODELS', function() {
-    var models = require('./../models')
-
-    it('Should register a "token" model in mognoose', function() {
-      var TokenModel = require('mongoose').model('token')
-      assert(TokenModel, '"token" model is not registered in mongoose')
+  describe('Models', function() {
+    var Token;
+    it('Models should contain "token" models.', function() {
+      Token = models.Token;
+      assert(Token, '"Token" is not in models.')
     })
 
-    it('Models.Token should exists', function() {
-      assert(models.Token, 'models.Token is not defined')
-    })
-
-    describe('TOKEN', function() {
-      var Token = models.Token
-
-      beforeEach(function(done) {
-        Token.remove({}, done)
-      })
-
-      it('Should generate a new random token', function(done) {
-        var tokenA = new Token({
-          token: 'token',
-          userKey: 'userKey',
-          roles: 'admin'
-        })
-
-        tokenA.save(function(error, token) {
-          assert(!error, 'should not rase error!')
-          assert(token.token !== 'token', 'new random token should not be the same as given token!')
-          done()
-        })
-      })
-
-      it('userKey is required', function(done) {
-        var tokenA = new Token({
-          token: 'token',
-          roles: 'roles'
-        })
-        tokenA.save(function(error, token) {
-          assert(error, 'saving token without userKey should rase error!')
-          assert(!token, 'returned token object is not undefiend!')
-          done()
-        })
-      })
-
-      it('roles is required', function(done) {
-        var tokenA = new Token({
-          token: 'token',
-          userKey: 'userKey'
-        })
-
-        tokenA.save(function(error, token) {
-          assert(error, 'saving token without roles should rase error!')
-          assert(!token, 'returned token object is not undefiend!')
-          done()
-        })
-      })
-
-      it('roles should be array', function(done) {
-        var tokenA = new Token({
-          token: 'token',
-          userKey: 'userKey',
-          roles: 'roles'
-        })
-
-        tokenA.save(function(error, token) {
-          assert(!error, 'saving should not rase error!')
-          assert(token.roles instanceof Array, 'roles is not array')
-          done()
-        })
-      })
-
-      it('loginAt should be now', function() {
-        var now = Date.now()
-        var tokenA = new Token({
-          token: 'token',
-          userKey: 'userKey',
-          roles: 'admin'
-        })
-
-        var dif = tokenA.loginAt - now
-        assert(dif > -1000, 'different is ' + dif)
-        assert(dif < 1000, 'different is ' + dif)
-      })
-
-      it('expireAt should be for next 10 minutes', function() {
-        var now = Date.now()
-        var tokenA = new Token({
-          token: 'token',
-          userKey: 'userKey',
-          roles: 'admin'
-        })
-
-        tokenA.save(function(error, token) {
-          var dif = tokenA.expireAt - now
-          assert(dif > configs.getExpirationTime() - 1000, 'different is ' + dif)
-          assert(dif < configs.getExpirationTime() + 1000, 'different is ' + dif)
-        })
-      })
-
-      describe('PUBLIC METHODS', function() {
-        var token
-        beforeEach(function(done) {
-          token = new Token({
-            token: 'salam',
-            userKey: 'userKey',
-            roles: 'roles'
+    describe('Token', function describeToken() {
+      function saveToken(token, userKey, roles) {
+        return function innerSaveToken(cb) {
+          new Token({
+            token: token,
+            userKey: userKey,
+            roles: roles
+          }).save(function(error, token) {
+            return cb(error, token);
           })
-          token.save(done)
-        })
+        }
+      }
 
-        describe('# extendExpirationTime', function() {
-          it('Should extend expireAt for 10 minutes', function() {
-            var expTime = token.expireAt
-
-            token.extendExpirationTime()
-            var newExpTime = token.expireAt
-
-            var dif = newExpTime - expTime
-            assert(dif === configs.getExpirationTime())
-          })
-        })
-
-        describe('# isExpired', function() {
-          it('Should return false for now', function() {
-            assert(token.isExpired() === false)
-          })
-          it('Should return true after 10 mitunes now', function() {
-            var timer = sinon.useFakeTimers(Date.now());
-            timer.tick(configs.getExpirationTime());
-            assert(token.isExpired() === true)
-            timer.restore()
-          })
-        })
-
-        describe('# revoke', function() {
-          it('Should set isRevoked true', function() {
-            token.revoke(function(error) {
-              if (error)
-                throw error
-
-              assert(token.isRevoked === true)
-            })
-          });
+      function revokeToken(token, cb) {
+        return token.revoke(function(error, token) {
+          return cb(error, token);
         });
-      });
+      }
 
-      describe("PUBLIC STATIC METHODS", function() {
-        describe("# generateToken", function() {
-          var token;
+      describe('Specifications', function describeSpecifications() {
+        before(function(done) {
+          Token.remove({}, done);
+        })
 
-          beforeEach(function(done) {
-            Token.generateToken('fuck', 'manager', 'me', false, function(error, result) {
+        afterEach(function(done) {
+          Token.remove({}, done);
+        })
+
+
+        it('Token.token is required.', function(done) {
+          saveToken(undefined, 'user', 'role')(function(error) {
+            assert(error, 'An error should be raised for empty token.');
+            done();
+          })
+        })
+
+        it('Token.token should be unique.', function(done) {
+          async.series([saveToken('token', 'user', 'role'), saveToken('token', 'user', 'role')], function(error, token2) {
+            assert(error, 'An error should be raised for duplicate token.');
+            done();
+          })
+        })
+
+        it('Token.userKey is required.', function(done) {
+          saveToken('token', null, 'role')(function(error) {
+            assert(error, 'An error should be raised for empty userKey');
+            done();
+          });
+        })
+
+        it('Token.roles is required.', function(done) {
+          saveToken('token', 'user', undefined)(function(error) {
+            assert(error, 'An error should be raised for not string array roles');
+            done();
+          });
+        })
+
+        it('Token.expireAt shoudl be now.', function(done) {
+          var now = Date.now();
+          saveToken('token', 'user', 'role')(function(error, token) {
+            assert(token.expireAt < now + 1000, 'expireAt - now is ' + (token.expireAt - now) + '.');
+            assert(token.expireAt > now - 1000, 'expireAt - now is ' + (token.expireAt - now) + '.');
+            done();
+          });
+        })
+      })
+
+      describe('Mothods', function describeMethods() {
+        var token;
+        before(function describeMethodsBefore(done) {
+          saveToken('token', 'user', 'role')(function(error, result) {
+            if (error)
+              throw error;
+            token = result;
+            done();
+          })
+        })
+
+        describe('# revoke(callback)', function describeRevoke() {
+          it('isRevoked initially should be false', function(done) {
+            assert(token.isRevoked === false, 'Initially isRevoked is not false, its ' + token.isRevoked);
+            done();
+          })
+
+          it('Should set the isRevoked true.', function(done) {
+            token.revoke();
+            assert(token.isRevoked, 'isRevoked is not true after call revoke, its ' + token.isRevoked);
+            done();
+          })
+
+          it('Should not save token if callback is null', function(done) {
+            Token.findByToken('token', function(error, token) {
               if (error)
                 throw error;
 
-              token = result;
+              if (!token)
+                throw new Error('token is not saved or is not finded.');
+
+              assert(token.isRevoked === false, 'isRevoked !== false');
+              done();
+            })
+          })
+
+          it('Should save the token if callback is passed.', function(done) {
+            token.revoke(function(error, token) {
+              if (error)
+                throw error;
+
+              Token.findByToken('token', function(error, token) {
+                if (error)
+                  throw error;
+
+                if (!token)
+                  throw new Error('token is not saved or is not finded.');
+
+                assert(token.isRevoked === true, 'isRevoked !== false. its =' + token.isRevoked);
+                done();
+              })
+            })
+          })
+        })
+
+        describe('# extendExpirationTime(time, callback)', function describeExtendExpirationTime() {
+          var EXTENTION_TIME = 1;
+          it('Should extend expireAt for the given time', function describeExtendExpirationTime_1(done) {
+            var expireAt_1 = token.expireAt;
+            token.extendExpirationTime(EXTENTION_TIME);
+            var expireAt_2 = token.expireAt;
+
+            var extendedTime = expireAt_2 - expireAt_1;
+            assert(extendedTime === EXTENTION_TIME);
+            done();
+          })
+
+          it('Should not save if callback is null', function describeExtendExpirationTime_2(done) {
+            Token.findByToken('token', function describeExtendExpirationTime_2_callback(error, result) {
+              if (error)
+                throw error;
+              assert(result.expireAt.getTime() === token.expireAt.getTime() - EXTENTION_TIME, 'saveToken.expireAt = ' + result.expireAt + ' and notSavedToken.expireAt = ' + token.expireAt);
+              done();
+            })
+          })
+
+          it('Should save if callback is provided', function describeExtendExpirationTime_3(done) {
+            token.extendExpirationTime(2, function describeExtendExpirationTime_extend_3_callback(error, result) {
+              Token.findByToken('token', function describeExtendExpirationTime_3_callback(error, result) {
+                if (error)
+                  throw error;
+
+                assert(result.expireAt.getTime() === token.expireAt.getTime(), 'saveToken.expireAt = ' + result.expireAt + ' and notSavedToken.expireAt = ' + token.expireAt);
+                done();
+              })
+            })
+          })
+        })
+
+        describe('# isExpired()', function describeIsExpired() {
+          it('Should return true if its not extended.', function describeIsExpired_1(done) {
+            var isExpired = token.isExpired();
+            assert(isExpired, 'isExpired() should return true, it returns ' + isExpired);
+            done();
+          })
+
+          it('Should return false if extend for ten minutes.', function describeIsExpired_2(done) {
+            token.extendExpirationTime(10 * 60 * 1000);
+            var isExpired = token.isExpired();
+            assert(isExpired === false, 'isExpired() should return false, it returns ' + isExpired);
+            done();
+          })
+        })
+      })
+
+      describe('Statics', function describeStatics() {
+        before(function describeStaticsBefore(done) {
+          Token.remove({}, done);
+        })
+
+        describe('# createToken', function describeStaticsCreateToken() {
+          it('Should create and save a new token.', function describeStaticsCreateToken_1(done) {
+            Token.createToken('token', 'userKey', 'roles', {}, 10 * 60 * 1000, false, function(error, token) {
+              if (error)
+                throw error;
+
+              assert(token, 'token is not valid.');
+              assert(token instanceof Token, 'returned token is not instanceof Token');
+              done();
+            })
+          })
+        })
+
+        describe('# findByUserKey', function describeStaticsFindByUserKey() {
+          it('Should find 2 tokens for the userKey = "userKey"', function describeStaticsFindByUserKey_1(done) {
+            Token.createToken('token1', 'userKey', 'admin', {}, 10 * 30, false, function(error, token) {
+              if (error)
+                throw error;
+
+
+              Token.findByUserKey('userKey', function(error, tokens) {
+                if (error)
+                  throw error;
+
+                assert(tokens.length === 2, 'There is not two token!');
+                done();
+              })
+            })
+          })
+        })
+
+
+        describe('# findByToken', function describeStaticsFindByToken() {
+          it('Should find the token saved with the token = "token".', function describeStaticsFindByToken_1(done) {
+            Token.findByToken('token', function(error, findedToken) {
+              if (error)
+                throw error;
+
+              assert(findedToken, 'Finded token is null!');
+              assert(!findedToken.length, 'findedToken should be one instance not array.');
+              assert(findedToken.token === 'token', 'should find token with the token = "token"');
               done();
             });
-          });
+          })
+        })
 
-          it('Should generate a new token and save it to database.', function() {
-            assert(typeof token === 'string', 'type of token is ' + typeof token);
-          });
-
-          it('There should be only one token.', function() {
-            var query = {
-              token: token
-            };
-            
-            Token.find(query, function(error, tokens) {
+        describe('# revokeByToken', function describeStaticsRevokeByToken() {
+          it('Should revoke the token with the "token = token".', function describeStaticsRevokeByToken_1(done) {
+            Token.revokeByToken('token', function(error, savedToken) {
               if (error)
                 throw error;
-              assert(tokens.length === 1, 'there are ' + tokens.length + ' with the token ' + token + '. ')
-            });
-          });
-        });
-      });
-    });
-  });
-});
+
+              Token.findByToken('token', function(error, findedToken) {
+                if (error)
+                  throw error;
+
+                if (!findedToken)
+                  throw new Error('there is not such a token.');
+
+                assert(findedToken.isRevoked, 'findedToken.isRevoked = ' + findedToken.isRevoked);
+                done();
+              })
+            })
+          })
+        })
+
+        describe('# revokeByUserKey', function describeStaticsRevokeByUserKey() {
+          it('Should revoke tokens with the "userKey = userKey".', function describeStaticsRevokeByUserKey_1(done) {
+            Token.revokeByUserKey('userKey', function(error, savedToken) {
+              if (error)
+                throw error;
+
+              Token.findByUserKey('userKey', function(error, findedToken) {
+                if (error)
+                  throw error;
+
+                if (!findedToken)
+                  throw new Error('There is no token.');
+
+                if (findedToken.length != 2)
+                  throw new Error('There should be tow tokens. But there is ' + findedToken.length);
+
+
+                assert(findedToken[0].isRevoked, 'findedToken[0].isRevoked = ' + findedToken[0].isRevoked);
+                assert(findedToken[1].isRevoked, 'findedToken[1].isRevoked = ' + findedToken[1].isRevoked);
+                done();
+              })
+            })
+          })
+        })
+      })
+    })
+  })
+})
