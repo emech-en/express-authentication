@@ -1,6 +1,6 @@
 {
   "name": "express-api-authentication",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "This is a express middleware that manage authentication and authorization",
   "main": "index.js",
   "repository": {
@@ -39,9 +39,9 @@
   "files": [
     "LICENSE",
     "index.js",
-    "lib/*",
-    "models/*",
-    "test/*"
+    "lib/",
+    "models/",
+    "test/"
   ],
   "engines": {
     "node": ">= 0.8.0"
