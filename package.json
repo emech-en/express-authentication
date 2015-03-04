@@ -1,6 +1,6 @@
 {
   "name": "express-api-authentication",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "This is a express middleware that manage authentication and authorization",
   "main": "index.js",
   "repository": {
@@ -38,7 +38,10 @@
   "homepage": "https://github.com/emech-en/express-api-authentication",
   "files": [
     "LICENSE",
-    "index.js"
+    "index.js",
+    "lib/*",
+    "models/*",
+    "test/*"
   ],
   "engines": {
     "node": ">= 0.8.0"
