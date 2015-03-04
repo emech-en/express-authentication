@@ -38,8 +38,18 @@ var tokenSchema = {
   // roles of the user
   roles: {
     type: [String],
-    required: true
+    required: true,
+    validate: validateRoles
   }
 };
 
 module.exports = tokenSchema;
+
+function validateRoles(value) {
+  if (!Array.isArray(value))
+    return false;
+
+  return value.every(function(val) {
+    return val;
+  })
+}

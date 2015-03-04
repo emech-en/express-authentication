@@ -39,11 +39,13 @@ var preSave = function(next) {
   return:
     [Token.findOne()]
 */
-var findByToken = function(token, projection, options, callback) {
+var findByToken = function(token) {
   var query = {
     token: token
   }
-  return Token.findOne(query, projection, options, callback)
+
+  arguments[0] = query;
+  return Token.findOne.apply(Token, arguments);
 };
 
 /*
@@ -52,16 +54,18 @@ var findByToken = function(token, projection, options, callback) {
 
   params:
     userKey: [string] the userKey to query.
-    callback: [function(error, tokens)]
+    args: [function(error, tokens)]
 
   return:
     [Token.find()]
 */
-var findByUserKey = function(userKey, projection, options, callback) {
+var findByUserKey = function(userKey) {
   var query = {
     userKey: userKey
   }
-  return Token.find(query, projection, options, callback)
+
+  arguments[0] = query;
+  return Token.find.apply(Token, arguments);
 };
 
 /*
@@ -76,7 +80,7 @@ var findByUserKey = function(userKey, projection, options, callback) {
     [async.each]
 */
 var revokeByUserKey = function(userKey, callback) {
-  projection = {
+  var projection = {
     isRevoked: true
   }
 
