@@ -19,7 +19,8 @@
     "glob": ">= 3.0.1",
     "mocha": ">= 1.4.2",
     "chai": ">= 1.2.0",
-    "sinon": "latest"
+    "sinon": "latest",
+    "chai-connect-middleware": "latest"
   },
   "keywords": [
     "mongo",
