@@ -1,3 +1,5 @@
+'use strict';
+
 module.exports = {
-  Token: require('./token')
+    Token: require('./token')
 }
